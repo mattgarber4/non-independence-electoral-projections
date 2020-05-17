@@ -35,13 +35,7 @@ LogicalVector simInOrder(NumericVector stateID, NumericVector baseProbs, Numeric
         
         for (int j = 0; j < probs.size(); ++j) {
             double newVal = probs[j] + adjustment;
-            if (newVal < 0.0) {
-                probs[j] = 0.0;
-            } else if (newVal > 1.0) {
-                probs[j] = 1.0;
-            } else {
-                probs[j] = newVal;
-            }
+            probs[j] = newVal < 0.0 ? 0.0 : newVal > 1.0 ? 1.0 : newVal;
         }
     }
     
