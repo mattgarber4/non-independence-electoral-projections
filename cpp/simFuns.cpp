@@ -15,7 +15,6 @@ double updateProb(bool demWin, int state, double depCoef, NumericVector weights,
 }
 
 
-
 // [[Rcpp::export]]
 LogicalVector simInOrder(NumericVector stateID, NumericVector baseProbs, NumericVector baseVotes, double coef) {
     LogicalVector out(stateID.size());
@@ -41,6 +40,18 @@ LogicalVector simInOrder(NumericVector stateID, NumericVector baseProbs, Numeric
     
     return out;
     
+}
+
+// [[Rcpp::export]]
+LogicalVector simulate(NumericVector baseProbs, NumericVector baseVotes, double coef) {
+    NumericVector ss = NumericVector(baseProbs.size());
+    NumericVector newProbs = NumericVector(baseProbs.size());
+    for (int i = 0; i < baseProbs.size(); ++i) {
+        ss[i] = i;
+        newProbs[i] = baseProbs[i] / 538.0;
+    }
+    NumericVector stateID = Rcpp::sample(ss, baseVotes.size(), false, baseVotes);
+    return simInOrder(stateID, baseProbs, baseVotes, coef);
 }
 
 
