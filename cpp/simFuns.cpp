@@ -48,10 +48,10 @@ LogicalVector simulate(NumericVector baseProbs, NumericVector baseVotes, double 
     NumericVector newProbs = NumericVector(baseProbs.size());
     for (int i = 0; i < baseProbs.size(); ++i) {
         ss[i] = i;
-        newProbs[i] = baseProbs[i] / 538.0;
+        newProbs[i] = (1.0 * baseVotes[i]) / 538.0;
     }
-    NumericVector stateID = Rcpp::sample(ss, baseVotes.size(), false, baseVotes);
-    return simInOrder(stateID, baseProbs, baseVotes, coef);
+    NumericVector stateID = Rcpp::sample(ss, baseVotes.size(), false, newProbs);
+    return simInOrder(stateID + 1, baseProbs, baseVotes, coef);
 }
 
 
