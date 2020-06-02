@@ -1,13 +1,3 @@
-library(pryr)
-library(dplyr)
-idxFun <- function(row, col, offset) {
-    col + (row - 1) * offset
-}
-
-idxGen <- function(offset) {
-    pryr::partial(idxFun, offset = offset)
-}
-
 dependenceCoefs <- c(0, 
                      seq(0.0001, 0.001, 0.0001), 
                      seq(0.0015, 0.01, 0.0005), 
@@ -16,7 +6,6 @@ dependenceCoefs <- c(0,
                      seq(0.2, 1, 0.1), 
                      seq(2, 4, 1))
 shifts <- c(-1, -.5, -.25, -.1, -.075, seq(-.05, .05, .01), .075, .1, .25, .5, 1)
-idxMap <- idxGen(length(shifts))
 
 
 electionSim <- setRefClass("electionSim",
@@ -29,17 +18,19 @@ electionSim <- setRefClass("electionSim",
                                initialVotes = "numeric",
                                stateKeys = "character",
                                stateMeans = "numeric",
-                               elections = "numeric"
+                               elections = "numeric",
+                               simulator = "function"
                            ),
                            methods = list(
-                               initialize = function(trials, dependence, initialProbs, initialVotes, stateKeys) {
+                               initialize = function(simulator, trials, dependence, initialProbs, initialVotes, stateKeys) {
+                                   simulator <<- simulator
                                    stateKeys <<- stateKeys
                                    initialProbs <<- initialProbs
                                    initialVotes <<- initialVotes
                                    trials <<- trials
                                    dependence <<- dependence
                                    s <- lapply(1:trials, 
-                                               function(n) simulate(initialProbs, initialVotes, dependence)
+                                               function(n) simulator(initialProbs, initialVotes, dependence)
                                    ) %>% myUtils::myBind()
                                    if (trials > 1) {
                                        colnames(s) <- stateKeys
