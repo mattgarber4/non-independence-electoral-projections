@@ -2,7 +2,6 @@
 #include <cmath>
 using namespace Rcpp;
 
-// [[Rcpp::export]]
 double updateProb(bool demWin, int state, double depCoef, NumericVector weights, NumericVector probs) {
     double stateWgt = log(weights[state]);
     double probWgt = 1.5 - 4 * pow((probs[state] - .5), 2.0);
@@ -15,8 +14,8 @@ double updateProb(bool demWin, int state, double depCoef, NumericVector weights,
 }
 
 
-// [[Rcpp::export]]
-LogicalVector simInOrder(NumericVector stateID, NumericVector baseProbs, NumericVector baseVotes, double coef) {
+
+LogicalVector simInOrderGreedy(NumericVector stateID, NumericVector baseProbs, NumericVector baseVotes, double coef) {
     LogicalVector out(stateID.size());
     NumericVector probs(baseProbs.size());
     NumericVector votes(baseVotes.size());
@@ -42,8 +41,24 @@ LogicalVector simInOrder(NumericVector stateID, NumericVector baseProbs, Numeric
     
 }
 
+LogicalVector simInOrderLazy(NumericVector stateID, NumericVector baseProbs, NumericVector baseVotes, double coef) {
+    LogicalVector out(stateID.size());
+    double adj = 0.0;
+    
+    for (int i = 0; i < out.size(); ++i) {
+        int thisState = stateID[i] - 1;
+        double prob = adj + baseProbs[thisState];
+        NumericVector res = Rcpp::rbinom(1, 1, prob < 0.0 ? 0.0 : prob > 1.0 ? 1.0 : prob);
+        out[thisState] = res[0] == 1;
+        adj += updateProb(out[thisState], thisState, coef, baseVotes, baseProbs);
+    }
+    
+    return out;
+    
+}
+
 // [[Rcpp::export]]
-LogicalVector simulate(NumericVector baseProbs, NumericVector baseVotes, double coef) {
+LogicalVector simulateLazy(NumericVector baseProbs, NumericVector baseVotes, double coef) {
     NumericVector ss = NumericVector(baseProbs.size());
     NumericVector newProbs = NumericVector(baseProbs.size());
     for (int i = 0; i < baseProbs.size(); ++i) {
@@ -51,7 +66,19 @@ LogicalVector simulate(NumericVector baseProbs, NumericVector baseVotes, double 
         newProbs[i] = (1.0 * baseVotes[i]) / 538.0;
     }
     NumericVector stateID = Rcpp::sample(ss, baseVotes.size(), false, newProbs);
-    return simInOrder(stateID + 1, baseProbs, baseVotes, coef);
+    return simInOrderLazy(stateID + 1, baseProbs, baseVotes, coef);
+}
+
+// [[Rcpp::export]]
+LogicalVector simulateGreedy(NumericVector baseProbs, NumericVector baseVotes, double coef) {
+    NumericVector ss = NumericVector(baseProbs.size());
+    NumericVector newProbs = NumericVector(baseProbs.size());
+    for (int i = 0; i < baseProbs.size(); ++i) {
+        ss[i] = i;
+        newProbs[i] = (1.0 * baseVotes[i]) / 538.0;
+    }
+    NumericVector stateID = Rcpp::sample(ss, baseVotes.size(), false, newProbs);
+    return simInOrderGreedy(stateID + 1, baseProbs, baseVotes, coef);
 }
 
 
