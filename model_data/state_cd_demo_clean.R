@@ -1,4 +1,4 @@
-setwd("C:/Users/mattg/Documents/Projections/model_data/demos")
+setwd("~/Projections/model_data/demos")
 library(rvest)
 
 
