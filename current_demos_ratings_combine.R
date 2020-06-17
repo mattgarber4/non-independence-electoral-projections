@@ -1,6 +1,4 @@
 library(myUtils)
-setwd("~/Projections")
-
 states <- rio::import("current_data/cook_ratings.xlsx")
 pviTrans <- function(pvi) {
     if (pvi == "EVEN") {

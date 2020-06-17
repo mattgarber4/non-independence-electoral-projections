@@ -1,5 +1,5 @@
 library(myUtils)
-setwd("~/Projections/model_data/demos")
+setwd("/model_data/demos")
 
 dta <- rio::import("sc-est2018-alldata6.csv")
 

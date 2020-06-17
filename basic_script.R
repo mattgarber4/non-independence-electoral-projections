@@ -2,7 +2,6 @@ library(myUtils) # to use, run devtools::install_github("mattgarber4/myUtils")
 library(Rcpp)
 library(ggplot2)
 library(fiftystater)
-setwd("~/Projections")
 sourceCpp("cpp/simFuns.cpp")
 source("viewer/simulation_utils.R")
 

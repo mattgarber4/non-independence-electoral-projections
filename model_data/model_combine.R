@@ -1,5 +1,5 @@
 library(myUtils)
-setwd(~/Projections/model_data")
+setwd("model_data")
 
 load("demos/demos_final.Rdata")
 load("ratings/pres.Rdata")

@@ -1,5 +1,5 @@
 library(myUtils)
-setwd("~/Projections/Cook Results")
+setwd("Cook Results")
 
 toStateAbr <- function(s) {
     for (i in rev(1:length(state.name))) {
@@ -35,7 +35,7 @@ cleanToModel <- function(dta, type) {
 
 for (f in c("sen", "pres", "gov")) {
     eval(parse(text = paste0('dta.', f, ' <- cleanToModel(rio::import(paste0(f, ".xlsx")), f)')))
-    eval(parse(text = paste0('save(dta.', f, ', file = paste0("~/Projections/model_data/ratings/", f, ".Rdata"))')))
+    eval(parse(text = paste0('save(dta.', f, ', file = paste0("~/non-independence-electoral-projections/model_data/ratings/", f, ".Rdata"))')))
 }
 
 

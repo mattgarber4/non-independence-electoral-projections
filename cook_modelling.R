@@ -1,5 +1,4 @@
 library(myUtils)
-setwd("~/Projections")
 load("model_data/final.Rdata")
 load("current_data/ratings_with_demos.Rdata")
 library(MASS)
