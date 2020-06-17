@@ -1,5 +1,5 @@
 library(myUtils)
-setwd("C:/Users/mattg/Documents/Projections/Cook Results")
+setwd("~/Projections/Cook Results")
 
 toStateAbr <- function(s) {
     for (i in rev(1:length(state.name))) {
