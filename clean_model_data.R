@@ -35,7 +35,7 @@ cleanToModel <- function(dta, type) {
 
 for (f in c("sen", "pres", "gov")) {
     eval(parse(text = paste0('dta.', f, ' <- cleanToModel(rio::import(paste0(f, ".xlsx")), f)')))
-    eval(parse(text = paste0('save(dta.', f, ', file = paste0("C:/Users/mattg/Documents/Projections/model_data/ratings/", f, ".Rdata"))')))
+    eval(parse(text = paste0('save(dta.', f, ', file = paste0("~/Projections/model_data/ratings/", f, ".Rdata"))')))
 }
 
 
