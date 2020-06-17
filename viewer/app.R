@@ -4,10 +4,12 @@ library(Rcpp)
 library(ggplot2)
 library(fiftystater)
 library(shinyWidgets)
+library(aws.s3)
+library(shape)
 
 source("simulation_utils.R")
+#simMap <- s3readRDS(object = "simsLazy.rds", bucket = "s3://mgelectsimlazy", region = 'us-east-2')
 simMap <- readRDS("simsLazy.rds")
-
 ui <- fluidPage(
    
    # Application title
@@ -46,7 +48,29 @@ ui <- fluidPage(
            ),
        column(
            width = 10, 
-           plotOutput("distPlot"),
+           tabsetPanel(
+              tabPanel(
+                 "Electoral College",
+                 strong(div(br(), 'Distribution of Electoral College Votes', align = 'center')),
+                 plotOutput("distPlot")
+              ),
+              tabPanel(
+                 "State Win Percents",
+                 strong(div(br(), 'Share of Simulated Wins by State', align = 'center')),
+                 plotOutput("winPct")
+              ),
+              tabPanel(
+                 "Map",
+                 strong(div(br(), "States Shaded by Share of Simulations Won", align = 'center')),
+                 plotOutput("map")
+              )
+              ,
+              tabPanel(
+                 "Vote Share",
+                 strong(div(br(), 'Average Electoral College Votes by Dependence Coefficient', align = 'center')),
+                 plotOutput("voteShare")
+              )
+           ),
            fluidRow(
                div(align = "center",
                noUiSliderInput(
@@ -86,11 +110,49 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-    
+   #observe({sim <<- simMap$get(input$coef / 100, input$bias / 100)})
    output$distPlot <- renderPlot({
-       sim <- simMap$get(input$coef / 100, input$bias / 100)
-       sim$plot(paste0("Dems win ", round(100 * sim$winPct, 1), "% of elections",
+      #input$coef
+      #input$bias
+      sim <<- simMap$get(input$coef / 100, input$bias / 100)
+      sim$plot(main = F, sub = paste0("Dems win ", round(100 * sim$winPct, 1), "% of elections",
                        " | Dems average ", round(sim$average, 1), " electoral votes"))
+   })
+   output$winPct <- renderPlot({
+      #input$coef
+      #input$bias
+      sim <<- simMap$get(input$coef / 100, input$bias / 100)
+      sim$plotMeans()
+   })
+   output$map <- renderPlot({
+      #print(paste(input$coef,
+      #input$bias))
+      sim <<- simMap$get(input$coef / 100, input$bias / 100)
+      sim$map(colorMapper)
+   })
+   output$voteShare <- renderPlot({
+      d <- sapply(dependenceCoefs, function(coef) {
+         simMap$get(coef, input$bias / 100)$average
+      })
+      v <- seq_along(dependenceCoefs)
+      pp <-  c(0, 1:10 / 10, 1 + 1:18 / 18, 2 + 1:7 / 7, 3 + 1:6 / 6, 4 + 1:9 / 9, 5 + 1:3 / 6)
+      plot(pp, d, xaxt = 'n', 
+           yaxt = 'n',
+           ylim = c(0, 538),
+           type = 'n', 
+           pch = 16,
+           cex = 1.5,
+           bty = 'l',
+           xlab = 'Dependence Coefficient',
+           ylab = 'Average Electoral Votes for Dems',
+           col = demBlue)
+      grid()
+      points(pp, d, pch = 16,
+           cex = 1.5,
+           col = demBlue)
+      lines(pp, d, col = demBlue, lwd = 1.5)
+      axis(1, at =pp, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
+      axis(2, at = c(0, 269, 538), labels = c(0, 269, 538))
    })
 }
 
