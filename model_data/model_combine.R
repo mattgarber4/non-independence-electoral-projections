@@ -1,5 +1,5 @@
 library(myUtils)
-setwd("C:/Users/mattg/Documents/Projections/model_data")
+setwd(~/Projections/model_data")
 
 load("demos/demos_final.Rdata")
 load("ratings/pres.Rdata")
