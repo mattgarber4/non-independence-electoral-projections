@@ -41,4 +41,4 @@ demos2020 <- rbind(stateDemos, cds)
 demos2020$state <- as.character(demos2020$state)
 demos2020[dim(demos2020)[1] + 1, ] <- c("DC", .119, .362, .469, .109)
 
-save(demos2020, file = "C:/Users/mattg/Documents/Projections/current_data/2020_demos.Rdata")
+save(demos2020, file = "~/Projections/current_data/2020_demos.Rdata")
