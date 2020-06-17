@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+non-independence-electoral-projections.Rproj
+viewer/sims.rds
+viewer/simsGreedy.rds
+viewer/simsLazy.rds
+viewer/rsconnect

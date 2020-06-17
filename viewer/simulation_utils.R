@@ -115,11 +115,11 @@ electionSim <- setRefClass("electionSim",
                                         pos = 4, 
                                         xpd = T)
                                    Arrowhead(x0 = len * 1.1 + .2, 
-                                                    y0 = sim$winPct, 
-                                                    arr.adj = 1, 
-                                                    angle = 180,
-                                                    arr.type = 'triangle',
-                                                    xpd = T)
+                                             y0 = sim$winPct, 
+                                             arr.adj = 1, 
+                                             angle = 180,
+                                             arr.type = 'triangle',
+                                             xpd = T)
                                }
                            ))
 electionSim$lock(names(electionSim$fields()))
@@ -144,16 +144,18 @@ colorMapper <- function(demPct) {
 
 plotMeanLine <- function(simMap, bias) {
     d <- sapply(dependenceCoefs, function(coef) {
-        simMap$get(coef, bias)$average
-    })
-    v <- seq_along(dependenceCoefs)
-    pp <-  c(0, 1:10 / 10, 
-             1 + 1:18 / 18, 
-             2 + 1:7 / 7, 
-             3 + 1:6 / 6, 
-             4 + 1:9 / 9, 
-             5 + 1:3 / 6)
-    plot(pp, d, 
+        sim <- simMap$get(coef, bias)
+        c(sim$average, quantile(sim$elections, c(.25, .75)), sim$winPct)
+    }) %>% t() %>% as.data.frame()
+    colnames(d) <- c('avg', 'q1', 'q3', 'winPct')
+    d$pos <-  c(0, 
+                1:10 / 10, 
+                1 + 1:18 / 18, 
+                2 + 1:7 / 7, 
+                3 + 1:6 / 6, 
+                4 + 1:9 / 9, 
+                5 + 1:3 / 6)
+    plot(d$pos, d$avg, 
          xaxt = 'n', 
          yaxt = 'n',
          ylim = c(0, 538),
@@ -162,18 +164,41 @@ plotMeanLine <- function(simMap, bias) {
          cex = 1.5,
          bty = 'l',
          xlab = 'Dependence Coefficient',
-         ylab = 'Average Electoral Votes for Dems',
+         ylab = '',
          col = demBlue)
-    grid()
-    points(pp, d, 
+    segments(x0 = -.25, x1 = 5.75, y0 = seq(0, 1, .125) * 538, lty = 'dotted', col = 'lightgray')
+    segments(x0 = seq(0, 5.5, .5), y0 = 538 * -1 * .25 * .2, y1 = 538, lty = 'dotted', col = 'lightgray')
+    polygon(x = c(d$pos, rev(d$pos)), 
+            y = c(d$q1, rev(d$q3)),
+            border = NA,
+            col = withTrans(demBlue, .15))
+    points(d$pos, d$avg, 
            pch = 16,
            cex = 1.5,
            col = demBlue)
-    lines(pp, d, 
+    lines(d$pos, d$avg, 
           col = demBlue, 
           lwd = 1.5)
-    axis(1, at = pp, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
-    axis(2, at = c(0, 269, 538), labels = c(0, 269, 538))
+    points(d$pos, 538 * d$winPct, pch = 15, col = gopRed)
+    lines(d$pos, 538 * d$winPct, col = gopRed)
+    axis(1, at = d$pos, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
+    axis(2, at = c(0, 134.5, 269, 403.5, 538), 
+         labels = c("0", "", "50%", "", "100%"),
+         las = 1)
+    legend(x = 0,
+           y = 600, 
+           legend = c("Average electoral votes for Democrats\t\t\t", 
+                      "Percent of simulations Democrats win"), 
+           bty = 'n', 
+           pch = c(16, 15), 
+           lty = 'solid', 
+           col = c(demBlue, gopRed), 
+           xpd = T, 
+           horiz = T)
 }
 
 
+withTrans <- function(color, transp) {
+    col <- col2rgb(color)
+    rgb(col[1,1], col[2, 1], col[3, 1], alpha = transp * 255, maxColorValue = 255)
+}
