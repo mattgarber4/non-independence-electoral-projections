@@ -141,3 +141,39 @@ linearParam <- function(t) {
 colorMapper <- function(demPct) {
     ifelse(demPct < .5, linearParam(3 * demPct / 4), linearParam(5 / 8 + 3 * (demPct - .5) / 4))
 }
+
+plotMeanLine <- function(simMap, bias) {
+    d <- sapply(dependenceCoefs, function(coef) {
+        simMap$get(coef, bias)$average
+    })
+    v <- seq_along(dependenceCoefs)
+    pp <-  c(0, 1:10 / 10, 
+             1 + 1:18 / 18, 
+             2 + 1:7 / 7, 
+             3 + 1:6 / 6, 
+             4 + 1:9 / 9, 
+             5 + 1:3 / 6)
+    plot(pp, d, 
+         xaxt = 'n', 
+         yaxt = 'n',
+         ylim = c(0, 538),
+         type = 'n', 
+         pch = 16,
+         cex = 1.5,
+         bty = 'l',
+         xlab = 'Dependence Coefficient',
+         ylab = 'Average Electoral Votes for Dems',
+         col = demBlue)
+    grid()
+    points(pp, d, 
+           pch = 16,
+           cex = 1.5,
+           col = demBlue)
+    lines(pp, d, 
+          col = demBlue, 
+          lwd = 1.5)
+    axis(1, at = pp, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
+    axis(2, at = c(0, 269, 538), labels = c(0, 269, 538))
+}
+
+
