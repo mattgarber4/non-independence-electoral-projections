@@ -61,7 +61,7 @@ electionSim <- setRefClass("electionSim",
                                    
                                },
                                
-                               plot = function(sub = NULL, main = TRUE) {
+                               plot = function(sub = NULL, main = TRUE, as.dem = T) {
                                    if (main == TRUE) {
                                        m <- "Simulated Elections"
                                    } else if (main == FALSE) {
@@ -69,14 +69,25 @@ electionSim <- setRefClass("electionSim",
                                    } else {
                                        m <- main
                                    }
+                                   
+                                   if (as.dem) {
+                                       els <- elections
+                                       cols <- c(rep(gopRed, 34), "black", rep(demBlue, 34))
+                                       lab <- "Democratic Electoral Votes"
+                                   } else {
+                                       els <- 538 - elections
+                                       cols <- c(rep(demBlue, 34), "black", rep(gopRed, 34))
+                                       lab <- "Republican Electoral Votes"
+                                   }
+                                   
                                    par(lwd = .1)
                                    hist(
-                                       elections,
+                                       els,
                                        breaks = c(0, seq(4, 268, 8), seq(270, 538, 8), 538),
-                                       col = c(rep(gopRed, 34), "black", rep(demBlue, 34)),
+                                       col = cols,
                                        axes = F,
                                        xlim = c(0, 538),
-                                       xlab = "Democratic Electoral Votes",
+                                       xlab = lab,
                                        ylab = "",
                                        main = m,
                                        sub = sub
@@ -92,14 +103,23 @@ electionSim <- setRefClass("electionSim",
                                    
                                },
                                
-                               plotMeans = function(main = NULL) {
-                                   idx <- order(sim$stateMeans)
-                                   len <- length(sim$stateMeans)
-                                   barplot(rbind(sim$stateMeans[idx],1 - sim$stateMeans[idx]),
+                               plotMeans = function(main = NULL, as.dem = T) {
+                                   if (as.dem) {
+                                       vals <- stateMeans
+                                       cols <- c(demBlue, gopRed)
+                                       pct <- winPct
+                                   } else {
+                                       vals <- 1 - stateMeans
+                                       cols <- c(gopRed, demBlue)
+                                       pct <- 1 - winPct
+                                   }
+                                   idx <- order(vals)
+                                   len <- length(stateMeans)
+                                   barplot(rbind(vals[idx], 1 - vals[idx]),
                                            ylim = c(0, 1),
-                                           col = c(demBlue, gopRed),
+                                           col = cols,
                                            width = 1,
-                                           space = c(0, rep(.1, length(sim$stateMeans) - 1)),
+                                           space = c(0, rep(.1, len - 1)),
                                            las = 2,
                                            axes = F,
                                            border = F,
@@ -108,14 +128,14 @@ electionSim <- setRefClass("electionSim",
                                    segments(
                                        x0 = 0,
                                        x1 = len * 1.1 - .1,
-                                       y0 = sim$winPct)
+                                       y0 = pct)
                                    text(len * 1.1 + .75,
-                                        sim$winPct,
-                                        paste0(round(100 * sim$winPct, 1), "%"), 
+                                        pct,
+                                        paste0(round(100 * pct, 1), "%"), 
                                         pos = 4, 
                                         xpd = T)
                                    Arrowhead(x0 = len * 1.1 + .2, 
-                                             y0 = sim$winPct, 
+                                             y0 = pct, 
                                              arr.adj = 1, 
                                              angle = 180,
                                              arr.type = 'triangle',
@@ -142,12 +162,32 @@ colorMapper <- function(demPct) {
     ifelse(demPct < .5, linearParam(3 * demPct / 4), linearParam(5 / 8 + 3 * (demPct - .5) / 4))
 }
 
-plotMeanLine <- function(simMap, bias) {
+plotMeanLine <- function(simMap, bias, as.dem = T, highlighted = NULL) {
+    if (as.dem) {
+        prim <- demBlue
+        alt <- demBlueAlt
+        white <- demBlueWhite
+        party <- "Democrats"
+    } else {
+        prim <- gopRed
+        alt <- gopRedAlt
+        white <- gopRedWhite
+        party <- "Republicans"
+    }
     d <- sapply(dependenceCoefs, function(coef) {
         sim <- simMap$get(coef, bias)
         c(sim$average, quantile(sim$elections, c(.25, .75)), sim$winPct)
     }) %>% t() %>% as.data.frame()
     colnames(d) <- c('avg', 'q1', 'q3', 'winPct')
+    
+    if (!as.dem) {
+        d$avg <- 538 - d$avg
+        d$winPct <- 1 - d$winPct
+        tmp <- 538 - d$q1
+        d$q1 <- 538 - d$q3
+        d$q3 <- tmp
+    }
+    
     d$pos <-  c(0, 
                 1:10 / 10, 
                 1 + 1:18 / 18, 
@@ -155,6 +195,7 @@ plotMeanLine <- function(simMap, bias) {
                 3 + 1:6 / 6, 
                 4 + 1:9 / 9, 
                 5 + 1:3 / 6)
+    # canvas
     plot(d$pos, d$avg, 
          xaxt = 'n', 
          yaxt = 'n',
@@ -165,22 +206,46 @@ plotMeanLine <- function(simMap, bias) {
          bty = 'l',
          xlab = 'Dependence Coefficient',
          ylab = '',
-         col = demBlue)
-    segments(x0 = -.25, x1 = 5.75, y0 = seq(0, 1, .125) * 538, lty = 'dotted', col = 'lightgray')
-    segments(x0 = seq(0, 5.5, .5), y0 = 538 * -1 * .25 * .2, y1 = 538, lty = 'dotted', col = 'lightgray')
+         col = prim)
+    
+    # grid
+    segments(x0 = -.25, 
+             x1 = 5.75, 
+             y0 = seq(0, 1, .125) * 538, 
+             lty = 'dotted', 
+             col = 'lightgray')
+    segments(x0 = seq(0, 5.5, .5), 
+             y0 = 538 * -1 * .25 * .2, 
+             y1 = 538, 
+             lty = 'dotted', 
+             col = 'lightgray')
+    
+    # conf interval
     polygon(x = c(d$pos, rev(d$pos)), 
             y = c(d$q1, rev(d$q3)),
             border = NA,
-            col = withTrans(demBlue, .15))
+            col = withTrans(prim, .15))
+    
+    # EC means
     points(d$pos, d$avg, 
            pch = 16,
            cex = 2,
-           col = demBlue)
-    lines(d$pos, d$avg, 
-          col = demBlue, 
+           col = prim)
+    lines(d$pos, d$avg,
+          col = prim, 
           lwd = 2)
-    points(d$pos, 538 * d$winPct, pch = 15, cex = 1.5, col = demBlueAlt)
-    lines(d$pos, 538 * d$winPct, lwd = 1.5, col = demBlueAlt)
+    
+    if (!is.null(highlighted)) {
+        idx <- which(near(dependenceCoefs, highlighted))
+        points(d$pos[idx], d$avg[idx], pch = 21, bg = white, col = prim, cex = 2.5, lwd = 5)
+    }
+    
+    points(d$pos, 538 * d$winPct, pch = 15, cex = 1.5, col = alt)
+    lines(d$pos, 538 * d$winPct, lwd = 1.5, col = alt)
+    
+    if (!is.null(highlighted)) {
+        points(d$pos[idx], 538 * d$winPct[idx], pch = 22, bg = white, col = alt, cex = 2.5, lwd = 5)
+    }
     axis(1, at = d$pos, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
     axis(2, at = c(0, 134.5, 269, 403.5, 538), 
          labels = c("0", "", "50%", "", "100%"),
@@ -189,12 +254,12 @@ plotMeanLine <- function(simMap, bias) {
            y = 600, 
            pt.cex = 1.5,
            pt.lwd = 1.5,
-           legend = c("Average electoral votes for Democrats\t\t\t", 
-                      "Percent of simulations Democrats win"), 
+           legend = c(paste0("Average % of electoral votes for ", party, "\t\t\t"), 
+                      paste0("% of simulated elections ", party, " win")), 
            bty = 'n', 
            pch = c(16, 15), 
            lty = 'solid', 
-           col = c(demBlue, demBlueAlt), 
+           col = c(prim, alt), 
            xpd = T, 
            horiz = T)
 }

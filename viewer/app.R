@@ -6,6 +6,7 @@ library(fiftystater)
 library(shinyWidgets)
 library(aws.s3)
 library(shape)
+library(dplyr)
 
 source("simulation_utils.R")
 simMap <- if(Sys.info()[['nodename']] == "MG-XPS-15") { 
@@ -17,7 +18,7 @@ simMap <- if(Sys.info()[['nodename']] == "MG-XPS-15") {
 }
 
 ui <- fluidPage(
-   
+   includeCSS("st.css"),
    # Application title
    titlePanel("Dependence in Election Forecasts"),
    
@@ -51,6 +52,15 @@ ui <- fluidPage(
             orientation = "vertical",
             connect = F,
             height = "300px"
+         ),
+         tags$div(
+            align = "center",
+            span("Toggle Party", style = "color:gray;font-style:italic"),
+            switchInput("as.dem",
+                        value = T,
+                        onLabel = "Dem",
+                        offLabel = "Rep")
+         
          )
       ),
       column(
@@ -83,7 +93,6 @@ ui <- fluidPage(
             div(align = "center",
                 noUiSliderInput(
                    inputId = "bias", 
-                   label = "Bias Towards Dems",
                    range = list(
                       min = 100 * c(-1, .5),
                       "10%" = 100 * c(-.5, .25),
@@ -110,7 +119,10 @@ ui <- fluidPage(
                    tooltips = T,
                    orientation = "horizontal",
                    width = "500px"
-                ))
+                ),
+                br(),
+                strong(textOutput("biasTxt"))
+            )
          )
       )
    )
@@ -118,21 +130,50 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+   biasMult <- reactive({
+      if (input$as.dem) {
+         1
+      } else {
+         -1
+      }
+   })
+   
+   winPct <- function(as.dem, demPct) {
+      if (as.dem) {
+         demPct
+      } else {
+         1 - demPct
+      }
+   }
+   
+   ecAvg <- function(as.dem, demAvg) {
+      if (as.dem) {
+         demAvg
+      } else {
+         538 - demAvg
+      }
+   }
+   
    output$distPlot <- renderPlot({
-      sim <<- simMap$get(input$coef / 100, input$bias / 100)
-      sim$plot(main = F, sub = paste0("Dems win ", round(100 * sim$winPct, 1), "% of elections",
-                                      " | Dems average ", round(sim$average, 1), " electoral votes"))
+      sim <<- simMap$get(input$coef / 100, biasMult() * input$bias / 100)
+      party <- c("Democrats", "Republicans")[biasMult()]
+      sim$plot(main = F, as.dem = input$as.dem, 
+               sub = paste0(party, " win ", round(100 * winPct(input$as.dem, sim$winPct), 1), "% of elections",
+                                      " | ", party, " average ", round(ecAvg(input$as.dem, sim$average), 1), " electoral votes"))
    })
    output$winPct <- renderPlot({
-      sim <<- simMap$get(input$coef / 100, input$bias / 100)
-      sim$plotMeans()
+      sim <<- simMap$get(input$coef / 100, biasMult() * input$bias / 100)
+      sim$plotMeans(as.dem = input$as.dem)
    })
    output$map <- renderPlot({
-      sim <<- simMap$get(input$coef / 100, input$bias / 100)
+      sim <<- simMap$get(input$coef / 100, biasMult() * input$bias / 100)
       sim$map(colorMapper)
    })
    output$voteShare <- renderPlot({
-      plotMeanLine(simMap, input$bias / 100)
+      plotMeanLine(simMap, biasMult() * input$bias / 100, as.dem = input$as.dem, highlighted = input$coef / 100)
+   })
+   output$biasTxt <- renderText({
+      paste0("Bias Towards ", ifelse(input$as.dem, "Democrats", "Republicans"))
    })
    
 }
