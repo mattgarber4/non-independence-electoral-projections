@@ -174,25 +174,27 @@ plotMeanLine <- function(simMap, bias) {
             col = withTrans(demBlue, .15))
     points(d$pos, d$avg, 
            pch = 16,
-           cex = 1.5,
+           cex = 2,
            col = demBlue)
     lines(d$pos, d$avg, 
           col = demBlue, 
-          lwd = 1.5)
-    points(d$pos, 538 * d$winPct, pch = 15, col = gopRed)
-    lines(d$pos, 538 * d$winPct, col = gopRed)
+          lwd = 2)
+    points(d$pos, 538 * d$winPct, pch = 15, cex = 1.5, col = demBlueAlt)
+    lines(d$pos, 538 * d$winPct, lwd = 1.5, col = demBlueAlt)
     axis(1, at = d$pos, labels = paste0(round(100 * dependenceCoefs, 2), "%"))
     axis(2, at = c(0, 134.5, 269, 403.5, 538), 
          labels = c("0", "", "50%", "", "100%"),
          las = 1)
     legend(x = 0,
            y = 600, 
+           pt.cex = 1.5,
+           pt.lwd = 1.5,
            legend = c("Average electoral votes for Democrats\t\t\t", 
                       "Percent of simulations Democrats win"), 
            bty = 'n', 
            pch = c(16, 15), 
            lty = 'solid', 
-           col = c(demBlue, gopRed), 
+           col = c(demBlue, demBlueAlt), 
            xpd = T, 
            horiz = T)
 }
